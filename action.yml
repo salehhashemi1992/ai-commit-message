@@ -1,0 +1,5 @@
+name: 'Generate Commit Description'
+description: 'Automatically generate a commit message description using AI power'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
