@@ -48,7 +48,7 @@ function main(): void
 
     $url = 'https://saleh-hashemi.ir/open-ai/commit-message';
     $commitTitle = exec('git log -1 --pretty=%s');
-    $commitChanges = exec('git show --oneline HEAD | tail -n +2 | head -n 50');
+    $commitChanges = exec('git show HEAD | tail -n +2 | head -n 50');
 
     echo "Commit Title: " . $commitTitle . '\n';
     echo "Commit Changes: " . $commitChanges . '\n';
