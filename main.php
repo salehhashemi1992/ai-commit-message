@@ -35,6 +35,7 @@ function amendCommitMessage(string $newMessage, string $committerEmail, string $
     exec("git config user.email '{$committerEmail}'");
     exec("git config user.name '{$committerName}'");
     exec("git commit --amend -m '{$newMessage}'");
+    exec("git push --force");
     exec("git config --unset user.email");
     exec("git config --unset user.name");
 }
