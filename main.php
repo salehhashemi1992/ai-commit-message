@@ -30,14 +30,13 @@ function getCommitDescription(string $url, string $title, string $changes): stri
     return '';
 }
 
-function amendCommitMessage(string $newMessage, string $committerEmail, string $committerName): void
+function amendCommitMessage(string $newMessage, string $committerEmail, string $committerName, string $commitSha): void
 {
     exec("git config user.email '{$committerEmail}'");
     exec("git config user.name '{$committerName}'");
-    exec("git commit --amend -m '{$newMessage}'");
-    exec("git push --force");
-    exec("git config --unset user.email");
-    exec("git config --unset user.name");
+    exec("git notes add -m '$newMessage' " . $commitSha);
+    exec('git config --unset user.email');
+    exec('git config --unset user.name');
 }
 
 function main(): void
@@ -55,7 +54,7 @@ function main(): void
     echo "Commit Title: " . $commitTitle . '\n';
     echo "Commit Changes: " . $commitChanges . '\n';
 
-    amendCommitMessage('test', $committerEmail, $committerName);
+    amendCommitMessage('test', $committerEmail, $committerName, $commitSha);
     /*    $commitDescription = getCommitDescription($url, $commitTitle, $commitChanges);
 
         if ($commitDescription) {
