@@ -30,6 +30,12 @@ function getCommitDescription(string $url, string $title, string $changes): stri
     return '';
 }
 
+function amendCommitMessage(string $commitDescription): void
+{
+    $amendMessage = "git commit --amend -m \"$(git log -1 --pretty=%B)\" -m \"$commitDescription\"";
+    exec($amendMessage);
+}
+
 function main(): void
 {
     exec('git config --global --add safe.directory /github/workspace');
@@ -40,6 +46,8 @@ function main(): void
 
     echo "Commit Title: " . $commitTitle . '\n';
     echo "Commit Changes: " . $commitChanges . '\n';
+
+    amendCommitMessage('test');
 /*    $commitDescription = getCommitDescription($url, $commitTitle, $commitChanges);
 
     if ($commitDescription) {
