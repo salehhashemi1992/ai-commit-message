@@ -30,14 +30,20 @@ function getCommitDescription(string $url, string $title, string $changes): stri
     return '';
 }
 
-function amendCommitMessage(string $commitDescription): void
+function amendCommitMessage(string $newMessage, string $committerEmail, string $committerName): void
 {
-    $amendMessage = "git commit --amend -m \"$(git log -1 --pretty=%B)\" -m \"$commitDescription\"";
-    exec($amendMessage);
+    exec("git config user.email '{$committerEmail}'");
+    exec("git config user.name '{$committerName}'");
+    exec("git commit --amend -m '{$newMessage}'");
+    exec("git config --unset user.email");
+    exec("git config --unset user.name");
 }
 
 function main(): void
 {
+    $committerEmail = getenv('INPUT_COMMITTER_EMAIL') ?: '';
+    $committerName = getenv('INPUT_COMMITTER_NAME') ?: '';
+
     exec('git config --global --add safe.directory /github/workspace');
 
     $url = 'https://saleh-hashemi.ir/open-ai/commit-message';
@@ -47,15 +53,15 @@ function main(): void
     echo "Commit Title: " . $commitTitle . '\n';
     echo "Commit Changes: " . $commitChanges . '\n';
 
-    amendCommitMessage('test');
-/*    $commitDescription = getCommitDescription($url, $commitTitle, $commitChanges);
+    amendCommitMessage('test', $committerEmail, $committerName);
+    /*    $commitDescription = getCommitDescription($url, $commitTitle, $commitChanges);
 
-    if ($commitDescription) {
-        echo "Generated commit description:\n";
-        echo $commitDescription;
-    } else {
-        echo "Failed to generate commit description.";
-    }*/
+        if ($commitDescription) {
+            echo "Generated commit description:\n";
+            echo $commitDescription;
+        } else {
+            echo "Failed to generate commit description.";
+        }*/
 }
 
 main();
