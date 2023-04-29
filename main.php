@@ -37,6 +37,7 @@ function amendCommitMessage(string $newMessage, string $committerEmail, string $
     exec("git notes add -m '$newMessage' " . $commitSha);
     exec('git config --unset user.email');
     exec('git config --unset user.name');
+    exec('git push origin refs/notes/*');
 }
 
 function main(): void
