@@ -3,10 +3,3 @@ description: 'Automatically generate a commit message description using AI power
 runs:
   using: 'docker'
   image: 'Dockerfile'
-inputs:
-  committer_email:
-    description: 'Committer email address'
-    required: true
-  committer_name:
-    description: 'Committer name'
-    required: true

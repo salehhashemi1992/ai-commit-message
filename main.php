@@ -30,20 +30,58 @@ function getCommitDescription(string $url, string $title, string $changes): stri
     return '';
 }
 
-function amendCommitMessage(string $newMessage, string $committerEmail, string $committerName): void
-{
+function amendCommitMessage(
+    string $commitTitle,
+    string $commitDescription,
+    string $committerEmail,
+    string $committerName
+): void {
     exec("git config user.email '{$committerEmail}'");
     exec("git config user.name '{$committerName}'");
-    exec("git commit --amend -m '{$newMessage}'");
-    exec("git push --force");
+
+    $commitTitle = escapeshellarg($commitTitle);
+    $commitDescription = escapeshellarg($commitDescription);
+    exec("git commit --amend -m {$commitTitle} -m {$commitDescription}");
+
+    exec("git push --force-with-lease");
+
+    exec("git config --unset user.email");
+    exec("git config --unset user.name");
+}
+
+function newAmendCommitMessage(
+    string $commitTitle,
+    string $commitDescription,
+    string $committerEmail,
+    string $committerName
+): void {
+    exec("git config user.email '{$committerEmail}'");
+    exec("git config user.name '{$committerName}'");
+
+    // Count how many commits back the commit is that you want to amend
+    $commitIndex = exec("git rev-list --count HEAD ^{$commitSha}");
+
+    // Perform an interactive rebase to edit the specified commit
+    exec("GIT_SEQUENCE_EDITOR='sed -i \"s/^pick {$commitSha} e/{$commitSha} e/\"' git rebase -i HEAD~{$commitIndex}");
+
+    // Amend the commit
+    $commitTitle = escapeshellarg($commitTitle);
+    $commitDescription = escapeshellarg($commitDescription);
+    exec("git commit --amend -m {$commitTitle} -m {$commitDescription}");
+
+    // Continue the rebase
+    exec("git rebase --continue");
+
+    // Push the changes to the remote repository
+    exec("git push --force-with-lease");
+
+    // Unset user.email and user.name
     exec("git config --unset user.email");
     exec("git config --unset user.name");
 }
 
 function main(): void
 {
-    $committerEmail = getenv('INPUT_COMMITTER_EMAIL') ?: '';
-    $committerName = getenv('INPUT_COMMITTER_NAME') ?: '';
     $commitSha = getenv('GITHUB_SHA') ?: '';
 
     exec('git config --global --add safe.directory /github/workspace');
@@ -61,7 +99,7 @@ function main(): void
     echo "Commit Title: " . $commitTitle . '\n';
     echo "Commit Changes: " . $commitChanges . '\n';
 
-    amendCommitMessage('test', $committerEmail, $committerName);
+    newAmendCommitMessage('test', 'test2', $committerEmail, $committerName);
     /*    $commitDescription = getCommitDescription($url, $commitTitle, $commitChanges);
 
         if ($commitDescription) {
