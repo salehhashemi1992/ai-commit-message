@@ -30,14 +30,14 @@ function getCommitDescription(string $url, string $title, string $changes): stri
     return '';
 }
 
-function amendCommitMessage(string $newMessage, string $committerEmail, string $committerName, string $commitSha): void
+function amendCommitMessage(string $newMessage, string $committerEmail, string $committerName): void
 {
     exec("git config user.email '{$committerEmail}'");
     exec("git config user.name '{$committerName}'");
-    exec("git notes add -m '$newMessage' " . $commitSha);
-    exec('git config --unset user.email');
-    exec('git config --unset user.name');
-    exec('git push origin refs/notes/*');
+    exec("git commit --amend -m '{$newMessage}'");
+    exec("git push --force");
+    exec("git config --unset user.email");
+    exec("git config --unset user.name");
 }
 
 function main(): void
@@ -52,10 +52,16 @@ function main(): void
     $commitTitle = exec('git log -1 --pretty=%s');
     $commitChanges = exec('git show ' . $commitSha . ' | head -n 50');
 
+    // Get the committer's name and email from the commit
+    $committerName = exec("git log -1 --pretty=%cn {$commitSha}");
+    $committerEmail = exec("git log -1 --pretty=%ce {$commitSha}");
+
+    echo "Commit Email: " . $committerEmail . '\n';
+    echo "Commit Name: " . $committerName . '\n';
     echo "Commit Title: " . $commitTitle . '\n';
     echo "Commit Changes: " . $commitChanges . '\n';
 
-    amendCommitMessage('test', $committerEmail, $committerName, $commitSha);
+    amendCommitMessage('test', $committerEmail, $committerName);
     /*    $commitDescription = getCommitDescription($url, $commitTitle, $commitChanges);
 
         if ($commitDescription) {
