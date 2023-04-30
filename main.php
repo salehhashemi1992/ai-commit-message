@@ -50,6 +50,7 @@ function amendCommitMessage(
 }
 
 function newAmendCommitMessage(
+    string $commitSha,
     string $commitTitle,
     string $commitDescription,
     string $committerEmail,
@@ -58,24 +59,24 @@ function newAmendCommitMessage(
     exec("git config user.email '{$committerEmail}'");
     exec("git config user.name '{$committerName}'");
 
-    // Count how many commits back the commit is that you want to amend
-    $commitIndex = exec("git rev-list --count HEAD ^{$commitSha}");
+    // 1. Create a new branch at the commit you want to amend
+    $newBranch = 'temp_amend_branch';
+    exec("git checkout -b {$newBranch} {$commitSha}");
 
-    // Perform an interactive rebase to edit the specified commit
-    exec("GIT_SEQUENCE_EDITOR='sed -i \"s/^pick {$commitSha} e/{$commitSha} e/\"' git rebase -i HEAD~{$commitIndex}");
-
-    // Amend the commit
+    // 2. Amend the commit on the new branch
     $commitTitle = escapeshellarg($commitTitle);
     $commitDescription = escapeshellarg($commitDescription);
     exec("git commit --amend -m {$commitTitle} -m {$commitDescription}");
 
-    // Continue the rebase
-    exec("git rebase --continue");
+    // 3. Perform an interactive rebase to incorporate the amended commit into the main branch
+    exec("git checkout main");
+    exec("git rebase --onto {$newBranch} {$commitSha}^");
 
-    // Push the changes to the remote repository
-    exec("git push --force-with-lease");
+    // 4. Push the changes to the remote repository
+    exec("git push");
 
-    // Unset user.email and user.name
+    // Clean up: delete the temporary branch and unset user.email and user.name
+    exec("git branch -D {$newBranch}");
     exec("git config --unset user.email");
     exec("git config --unset user.name");
 }
@@ -99,7 +100,7 @@ function main(): void
     echo "Commit Title: " . $commitTitle . '\n';
     echo "Commit Changes: " . $commitChanges . '\n';
 
-    newAmendCommitMessage('test', 'test2', $committerEmail, $committerName);
+    newAmendCommitMessage($commitSha, 'test', 'test2', $committerEmail, $committerName);
     /*    $commitDescription = getCommitDescription($url, $commitTitle, $commitChanges);
 
         if ($commitDescription) {
