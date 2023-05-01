@@ -52,6 +52,8 @@ function main(): void
     $commitTitle = exec('git log -1 --pretty=%s');
     $commitChanges = exec("git diff {$commitSha}~ {$commitSha} --unified=0");
 
+    echo "Commit Changes: " . $commitChanges;
+
     $committerName = exec("git log -1 --pretty=%cn $commitSha");
     $committerEmail = exec("git log -1 --pretty=%ce $commitSha");
 
