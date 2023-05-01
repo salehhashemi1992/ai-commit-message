@@ -30,13 +30,8 @@ function updateLastCommitMessage(
     $newTitle = escapeshellarg($newTitle);
     $newDescription = escapeshellarg($newDescription);
 
-    // Soft reset to the previous commit
     exec("git reset --soft HEAD~1");
-
-    // Create a new commit with the updated title and description
     exec("git commit -m {$newTitle} -m {$newDescription}");
-
-    // Push the changes to the remote repository
     exec("git push origin --force");
 
     // Clean up: unset user.email and user.name
@@ -50,14 +45,27 @@ function main(): void
     exec('git config --global --add safe.directory /github/workspace');
 
     $commitTitle = exec('git log -1 --pretty=%s');
-    $commitChanges = exec("git diff {$commitSha}~ {$commitSha} --unified=0");
+    $command = "git diff {$commitSha}~ {$commitSha}";
+
+    exec($command, $output, $return_var);
+
+    // Check if the command executed successfully
+    if ($return_var == 0) {
+        $output = array_slice($output, 0, 100);
+
+        $commitChanges = implode("\n", $output);
+
+        echo "Git diff output:\n" . $commitChanges;
+    } else {
+        echo "Error: Could not run git diff. Return code: " . $return_var;
+        exit;
+    }
 
     echo "Commit Changes: " . $commitChanges;
 
     $committerName = exec("git log -1 --pretty=%cn $commitSha");
     $committerEmail = exec("git log -1 --pretty=%ce $commitSha");
 
-    // Call the updateLastCommitMessage function with the correct arguments
     if ($commitTitle === '[ai]') {
         list($newTitle, $newDescription) = fetchAiGeneratedTitleAndDescription($commitChanges);
         updateLastCommitMessage($newTitle, $newDescription, $committerEmail, $committerName);
