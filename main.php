@@ -10,7 +10,7 @@ function fetchAiGeneratedTitleAndDescription(string $commitChanges): array
 {
     $client = new Client();
     $response = $client->post('https://saleh-hashemi.ir/open-ai/commit-message', [
-        'json' => ['commit_changes' => $commitChanges]
+        'form_params' => ['commit_changes' => $commitChanges]
     ]);
 
     $responseData = json_decode((string)$response->getBody(), true);
