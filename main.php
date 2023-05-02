@@ -58,7 +58,7 @@ function main(): void
 
     // Check if the command executed successfully
     if ($return_var == 0) {
-        $output = array_slice($output, 0, 100);
+        $output = array_slice($output, 0, 400);
 
         $commitChanges = implode("\n", $output);
 
