@@ -3,19 +3,26 @@
 declare(strict_types=1);
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 
 require 'vendor/autoload.php';
 
 function fetchAiGeneratedTitleAndDescription(string $commitChanges): array
 {
-    $client = new Client();
-    $response = $client->post('https://saleh-hashemi.ir/open-ai/commit-message', [
-        'form_params' => ['commit_changes' => $commitChanges]
-    ]);
+    try {
+        $client = new Client();
+        $response = $client->post('https://saleh-hashemi.ir/open-ai/commit-message', [
+            'form_params' => ['commit_changes' => $commitChanges]
+        ]);
 
-    $responseData = json_decode((string)$response->getBody(), true);
+        $responseData = json_decode((string)$response->getBody(), true);
 
-    return [$responseData['title'], $responseData['description']];
+        return [$responseData['title'], $responseData['description']];
+    } catch (GuzzleException $e) {
+        echo "::error::Error fetching AI-generated title and description: " . $e->getMessage() . PHP_EOL;
+
+        exit(1);
+    }
 }
 
 function updateLastCommitMessage(
@@ -58,7 +65,7 @@ function main(): void
         echo "Git diff output:\n" . $commitChanges;
     } else {
         echo "Error: Could not run git diff. Return code: " . $return_var;
-        exit;
+        exit(1);
     }
 
     echo "Commit Changes: " . $commitChanges;
