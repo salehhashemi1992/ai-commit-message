@@ -28,12 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Replace commit message with AI-generated title
-        uses: salehhashemi1992/ai-commit-description@main
+        uses: salehhashemi1992/ai-commit-description@v0.1.0
 ```
 
 Now, whenever you push a commit with the title [ai], this action will automatically generate a commit title and description using AI and update the commit message accordingly.
