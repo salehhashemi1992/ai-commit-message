@@ -4,6 +4,10 @@ This GitHub Action automatically generates commit messages and descriptions for 
 
 When you make a commit with the title [ai], this action will analyze the commit changes, use AI to generate a commit title and description, and update the commit message accordingly.
 
+### Sample Output
+![](./img/sample1.jpg)
+![](./img/sample2.jpg)
+
 ## Features
 * Automatically generates meaningful commit titles and descriptions for your commits
 * Utilizes AI to analyze commit changes and generate relevant commit messages
