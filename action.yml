@@ -1,6 +1,8 @@
 name: 'Ai Commit Message'
 description: 'Automatically generate a commit message using AI power'
-
+branding:
+  icon: "git-commit"
+  color: "purple"
 runs:
   using: 'docker'
   image: 'Dockerfile'
