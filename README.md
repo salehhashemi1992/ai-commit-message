@@ -37,7 +37,7 @@ jobs:
           fetch-depth: 0
 
       - name: Replace commit message with AI-generated title
-        uses: salehhashemi1992/ai-commit-message@v0.2.0
+        uses: salehhashemi1992/ai-commit-message@v0.3.0
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
