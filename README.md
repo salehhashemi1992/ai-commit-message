@@ -35,7 +35,7 @@ jobs:
           fetch-depth: 0
 
       - name: Replace commit message with AI-generated title
-        uses: salehhashemi1992/ai-commit-description@v0.1.0
+        uses: salehhashemi1992/ai-commit-message@v0.1.0
 ```
 
 Now, whenever you push a commit with the title [ai], this action will automatically generate a commit title and description using AI and update the commit message accordingly.
