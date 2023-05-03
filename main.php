@@ -7,15 +7,31 @@ use GuzzleHttp\Exception\GuzzleException;
 
 require 'vendor/autoload.php';
 
+function main(): void
+{
+    $commitSha = getenv('GITHUB_SHA') ?: '';
+    exec('git config --global --add safe.directory /github/workspace');
+
+    $commitTitle = exec('git log -1 --pretty=%s');
+
+    $committerName = exec("git log -1 --pretty=%cn $commitSha");
+    $committerEmail = exec("git log -1 --pretty=%ce $commitSha");
+
+    if ($commitTitle === '[ai]') {
+        list($newTitle, $newDescription) = fetchAiGeneratedTitleAndDescription(
+            getCommitChanges($commitSha),
+            getenv('OPENAI_API_KEY')
+        );
+
+        updateLastCommitMessage($newTitle, $newDescription, $committerEmail, $committerName);
+    }
+}
+
+main();
+
 function fetchAiGeneratedTitleAndDescription(string $commitChanges, string $openAiApiKey): array
 {
-    $prompt = "Based on the following line-by-line changes in a commit, please generate an informative commit title and description
-     \n(max two or three lines of description to not exceed the model max token limitation):
-     \nCommit changes:
-     \n{$commitChanges}
-     \nFormat your response as follows:
-     \nCommit title: [Generated commit title]
-     \nCommit description: [Generated commit description]";
+    $prompt = generatePrompt($commitChanges);
 
     $input_data = [
         "temperature" => 0.7,
@@ -46,23 +62,39 @@ function fetchAiGeneratedTitleAndDescription(string $commitChanges, string $open
         $complete = json_decode($response->getBody()->getContents(), true);
         $output = $complete['choices'][0]['message']['content'];
 
-        $title = '';
-        $description = '';
-        $responseLines = explode("\n", $output);
-        foreach ($responseLines as $line) {
-            if (str_starts_with($line, 'Commit title: ')) {
-                $title = str_replace('Commit title: ', '', $line);
-            } elseif (str_starts_with($line, 'Commit description: ')) {
-                $description = str_replace('Commit description: ', '', $line);
-            }
-        }
-
-        return [$title, $description];
+        return extractTitleAndDescription($output);
 
     } catch (GuzzleException $e) {
         echo "::error::Error fetching AI-generated title and description: " . $e->getMessage() . PHP_EOL;
         exit(1);
     }
+}
+
+function generatePrompt(string $commitChanges): string
+{
+    return "Based on the following line-by-line changes in a commit, please generate an informative commit title and description
+     \n(max two or three lines of description to not exceed the model max token limitation):
+     \nCommit changes:
+     \n{$commitChanges}
+     \nFormat your response as follows:
+     \nCommit title: [Generated commit title]
+     \nCommit description: [Generated commit description]";
+}
+
+function extractTitleAndDescription(string $output): array
+{
+    $title = '';
+    $description = '';
+    $responseLines = explode("\n", $output);
+    foreach ($responseLines as $line) {
+        if (str_starts_with($line, 'Commit title: ')) {
+            $title = str_replace('Commit title: ', '', $line);
+        } elseif (str_starts_with($line, 'Commit description: ')) {
+            $description = str_replace('Commit description: ', '', $line);
+        }
+    }
+
+    return [$title, $description];
 }
 
 function updateLastCommitMessage(
@@ -71,8 +103,7 @@ function updateLastCommitMessage(
     string $committerEmail,
     string $committerName
 ): void {
-    exec("git config user.email '{$committerEmail}'");
-    exec("git config user.name '{$committerName}'");
+    configureGitCommitter($committerEmail, $committerName);
 
     $newTitle = escapeshellarg($newTitle);
     $newDescription = escapeshellarg($newDescription);
@@ -81,44 +112,33 @@ function updateLastCommitMessage(
     exec("git commit -m {$newTitle} -m {$newDescription}");
     exec("git push origin --force");
 
-    // Clean up: unset user.email and user.name
+    unsetGitCommitterConfiguration();
+}
+
+function configureGitCommitter(string $committerEmail, string $committerName): void
+{
+    exec("git config user.email '{$committerEmail}'");
+    exec("git config user.name '{$committerName}'");
+}
+
+function unsetGitCommitterConfiguration(): void
+{
     exec("git config --unset user.email");
     exec("git config --unset user.name");
 }
 
-function main(): void
+function getCommitChanges(string $commitSha): string
 {
-    $commitSha = getenv('GITHUB_SHA') ?: '';
-    exec('git config --global --add safe.directory /github/workspace');
-
-    $commitTitle = exec('git log -1 --pretty=%s');
     $command = "git diff {$commitSha}~ {$commitSha}";
 
     exec($command, $output, $return_var);
 
-    // Check if the command executed successfully
     if ($return_var == 0) {
         $output = array_slice($output, 0, 400);
-
-        $commitChanges = implode("\n", $output);
-
-        echo "Git diff output:\n" . $commitChanges;
+        return implode("\n", $output);
     } else {
         echo "Error: Could not run git diff. Return code: " . $return_var;
         exit(1);
     }
-
-    echo "Commit Changes: " . $commitChanges;
-
-    $committerName = exec("git log -1 --pretty=%cn $commitSha");
-    $committerEmail = exec("git log -1 --pretty=%ce $commitSha");
-
-    if ($commitTitle === '[ai]') {
-        $openAiApiKey = getenv('OPENAI_API_KEY');
-
-        list($newTitle, $newDescription) = fetchAiGeneratedTitleAndDescription($commitChanges, $openAiApiKey);
-        updateLastCommitMessage($newTitle, $newDescription, $committerEmail, $committerName);
-    }
 }
 
-main();
