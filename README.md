@@ -16,7 +16,9 @@ When you make a commit with the title [ai], this action will analyze the commit 
 ## Usage
 To use this action in your GitHub repository, follow these steps:
 
-Add the following workflow file to your repository in the .github/workflows directory, and name it ai_commit_message_generator.yml:
+1. Add a secret named `OPENAI_API_KEY` in your GitHub repository containing your OpenAI API key.
+
+2. Add the following workflow file to your repository in the .github/workflows directory, and name it ai_commit_message_generator.yml:
 
 ```bash
 name: AI Commit Message Generator
@@ -35,7 +37,9 @@ jobs:
           fetch-depth: 0
 
       - name: Replace commit message with AI-generated title
-        uses: salehhashemi1992/ai-commit-message@v0.1.0
+        uses: salehhashemi1992/ai-commit-message@v0.2.0
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 Now, whenever you push a commit with the title [ai], this action will automatically generate a commit title and description using AI and update the commit message accordingly.
