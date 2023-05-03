@@ -7,20 +7,60 @@ use GuzzleHttp\Exception\GuzzleException;
 
 require 'vendor/autoload.php';
 
-function fetchAiGeneratedTitleAndDescription(string $commitChanges): array
+function fetchAiGeneratedTitleAndDescription(string $commitChanges, string $openAiApiKey): array
 {
+    $prompt = "Based on the following line-by-line changes in a commit, please generate an informative commit title and description
+     \n(max two or three lines of description to not exceed the model max token limitation):
+     \nCommit changes:
+     \n{$commitChanges}
+     \nFormat your response as follows:
+     \nCommit title: [Generated commit title]
+     \nCommit description: [Generated commit description]";
+
+    $input_data = [
+        "temperature" => 0.7,
+        "max_tokens" => 300,
+        "frequency_penalty" => 0,
+        'model' => 'gpt-3.5-turbo',
+        "messages" => [
+            [
+                'role' => 'user',
+                'content' => $prompt
+            ],
+        ]
+    ];
+
     try {
-        $client = new Client();
-        $response = $client->post('https://saleh-hashemi.ir/open-ai/commit-message', [
-            'form_params' => ['commit_changes' => $commitChanges]
+        $client = new Client([
+            'base_uri' => 'https://api.openai.com',
+            'headers' => [
+                'Authorization' => 'Bearer ' . $openAiApiKey,
+                'Content-Type' => 'application/json'
+            ]
         ]);
 
-        $responseData = json_decode((string)$response->getBody(), true);
+        $response = $client->post('/v1/chat/completions', [
+            'json' => $input_data
+        ]);
 
-        return [$responseData['title'], $responseData['description']];
+        $complete = json_decode($response->getBody()->getContents(), true);
+        $output = $complete['choices'][0]['message']['content'];
+
+        $title = '';
+        $description = '';
+        $responseLines = explode("\n", $output);
+        foreach ($responseLines as $line) {
+            if (str_starts_with($line, 'Commit title: ')) {
+                $title = str_replace('Commit title: ', '', $line);
+            } elseif (str_starts_with($line, 'Commit description: ')) {
+                $description = str_replace('Commit description: ', '', $line);
+            }
+        }
+
+        return [$title, $description];
+
     } catch (GuzzleException $e) {
         echo "::error::Error fetching AI-generated title and description: " . $e->getMessage() . PHP_EOL;
-
         exit(1);
     }
 }
@@ -74,7 +114,9 @@ function main(): void
     $committerEmail = exec("git log -1 --pretty=%ce $commitSha");
 
     if ($commitTitle === '[ai]') {
-        list($newTitle, $newDescription) = fetchAiGeneratedTitleAndDescription($commitChanges);
+        $openAiApiKey = getenv('OPENAI_API_KEY');
+
+        list($newTitle, $newDescription) = fetchAiGeneratedTitleAndDescription($commitChanges, $openAiApiKey);
         updateLastCommitMessage($newTitle, $newDescription, $committerEmail, $committerName);
     }
 }
