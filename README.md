@@ -26,6 +26,8 @@ on: [push]
 jobs:
   ai_commit_message:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
