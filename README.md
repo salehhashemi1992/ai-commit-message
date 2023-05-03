@@ -40,6 +40,10 @@ jobs:
 
 Now, whenever you push a commit with the title [ai], this action will automatically generate a commit title and description using AI and update the commit message accordingly.
 
+### Known Bugs
+If you push a new commit before the title of the last commit has been updated, it will result in an issue where only the last commit title gets updated. To avoid this problem, please make sure to wait for the previous commit's title to be updated before pushing a new commit.
+
+
 ### Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
