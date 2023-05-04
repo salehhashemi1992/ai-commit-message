@@ -46,13 +46,13 @@ jobs:
 
 Now, whenever you push a commit with the title [ai], this action will automatically generate a commit title and description using AI and update the commit message accordingly.
 
-### Configuration
+## Configuration
 You can customize the behavior of this action using the following environment variables:
 
-#### OPENAI_API_KEY
+### OPENAI_API_KEY
 Required. The API key for accessing the OpenAI API.
 
-#### OPENAI_MODEL
+### OPENAI_MODEL
 Optional. The OpenAI model you want to use.
 
 Supported values are 'gpt-3.5-turbo', 'gpt-4', and 'gpt-4-32k'. Defaults to 'gpt-3.5-turbo'.
