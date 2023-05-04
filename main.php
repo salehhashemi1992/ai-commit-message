@@ -18,9 +18,18 @@ function main(): void
     $committerEmail = exec("git log -1 --pretty=%ce $commitSha");
 
     if ($commitTitle === '[ai]') {
+        $model = getenv('OPENAI_MODEL') ?: 'gpt-3.5-turbo'; // Default to gpt-3.5-turbo if no environment variable is set
+
+        if (!in_array($model, ['gpt-4', 'gpt-4-32k', 'gpt-3.5-turbo'])) {
+            echo "::error::Invalid model specified. Please use either gpt-3.5-turbo', 'gpt-4' or 'gpt-4-32k'." .
+                PHP_EOL;
+            exit(1);
+        }
+
         list($newTitle, $newDescription) = fetchAiGeneratedTitleAndDescription(
             getCommitChanges($commitSha),
-            getenv('OPENAI_API_KEY')
+            getenv('OPENAI_API_KEY'),
+            $model,
         );
 
         updateLastCommitMessage($newTitle, $newDescription, $committerEmail, $committerName);
@@ -29,7 +38,7 @@ function main(): void
 
 main();
 
-function fetchAiGeneratedTitleAndDescription(string $commitChanges, string $openAiApiKey): array
+function fetchAiGeneratedTitleAndDescription(string $commitChanges, string $openAiApiKey, string $model): array
 {
     $prompt = generatePrompt($commitChanges);
 
@@ -37,7 +46,7 @@ function fetchAiGeneratedTitleAndDescription(string $commitChanges, string $open
         "temperature" => 0.7,
         "max_tokens" => 300,
         "frequency_penalty" => 0,
-        'model' => 'gpt-3.5-turbo',
+        'model' => $model,
         "messages" => [
             [
                 'role' => 'user',
@@ -134,7 +143,13 @@ function getCommitChanges(string $commitSha): string
     exec($command, $output, $return_var);
 
     if ($return_var == 0) {
-        $output = array_slice($output, 0, 400);
+        $length = getenv('OPENAI_MODEL') ? match (getenv('OPENAI_MODEL')) {
+            'gpt-3.5-turbo' => 400,
+            'gpt-4' => 800,
+            'gpt-4-32k' => 3200,
+        } : 400;
+
+        $output = array_slice($output, 0, $length);
         return implode("\n", $output);
     } else {
         echo "Error: Could not run git diff. Return code: " . $return_var;
