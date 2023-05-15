@@ -138,7 +138,7 @@ function unsetGitCommitterConfiguration(): void
 
 function getCommitChanges(string $commitSha): string
 {
-    $command = "git diff {$commitSha}~ {$commitSha}";
+    $command = "git diff {$commitSha}~ {$commitSha} | grep -v 'warning'";
 
     exec($command, $output, $return_var);
 
